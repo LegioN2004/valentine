@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <title>Will you be my Valentine?</title>
+
+        <!-- Confetti library -->
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+        <style>
+            :root {
+                --bg1: #ffd6e7;
+                --bg2: #ffeef6;
+                --card: #ffffffee;
+                --yes: #ff3b7a;
+                --yesHover: #ff1f68;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                min-height: 100svh;
+                display: grid;
+                place-items: center;
+                background: radial-gradient(
+                    circle at top,
+                    var(--bg2),
+                    var(--bg1)
+                );
+                font-family: system-ui, sans-serif;
+                overflow: hidden;
+                padding: 16px;
+                position: relative;
+            }
+
+            /* SCATTERED POLAROID PHOTOS */
+            .polaroid {
+                position: fixed;
+                background: white;
+                padding: 12px 12px 45px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                z-index: 1;
+                opacity: 0;
+                animation: fadeInFloat 1.2s ease forwards;
+            }
+
+            .polaroid img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+
+            @keyframes fadeInFloat {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px) rotate(var(--rotation));
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) rotate(var(--rotation));
+                }
+            }
+
+            /* FULL-SCREEN CONFETTI CANVAS */
+            #confettiCanvas {
+                position: fixed;
+                inset: 0;
+                width: 100vw;
+                height: 100vh;
+                pointer-events: none;
+                z-index: 9999;
+            }
+
+            .card {
+                width: min(650px, 90vw);
+                padding: 40px 30px;
+                background: var(--card);
+                backdrop-filter: blur(20px);
+                border-radius: 30px;
+                text-align: center;
+                box-shadow: 0 25px 80px rgba(0, 0, 0, 0.2);
+                z-index: 100;
+                position: relative;
+            }
+
+            .main-photo-container {
+                width: min(280px, 75vw);
+                margin: 0 auto 20px;
+                background: white;
+                padding: 15px 15px 50px;
+                box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+                border-radius: 4px;
+                transform: rotate(-2deg);
+                transition: transform 0.3s ease;
+            }
+
+            .main-photo-container:hover {
+                transform: rotate(0deg) scale(1.05);
+            }
+
+            .main-photo {
+                width: 100%;
+                height: auto;
+                display: block;
+                border-radius: 2px;
+            }
+
+            h1 {
+                font-size: clamp(28px, 4.5vw, 46px);
+                margin: 20px 0;
+                font-weight: 800;
+                background: linear-gradient(135deg, #ff1f68, #ff6b9d);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+            .button-zone {
+                position: relative;
+                width: min(520px, 92%);
+                height: 150px;
+                margin: 0 auto;
+                touch-action: none;
+            }
+
+            button {
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                padding: 18px 40px;
+                font-size: 20px;
+                font-weight: 800;
+                border-radius: 999px;
+                border: none;
+                cursor: pointer;
+                box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+                user-select: none;
+                -webkit-tap-highlight-color: transparent;
+                transition:
+                    transform 0.12s ease,
+                    background 0.12s ease,
+                    box-shadow 0.12s ease;
+            }
+
+            #yesBtn {
+                left: 18%;
+                background: linear-gradient(135deg, var(--yes), var(--yesHover));
+                color: #fff;
+            }
+            #yesBtn:hover {
+                background: linear-gradient(135deg, var(--yesHover), #ff0054);
+                box-shadow: 0 15px 35px rgba(255, 59, 122, 0.4);
+            }
+
+            #noBtn {
+                left: 62%;
+                background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+                color: #111827;
+            }
+
+            .hint {
+                margin-top: 12px;
+                font-size: 14px;
+                opacity: 0.7;
+                font-style: italic;
+            }
+
+            .result {
+                display: none;
+                margin-top: 20px;
+                animation: pop 0.35s ease;
+            }
+
+            .result h2 {
+                font-size: clamp(32px, 5vw, 50px);
+                margin: 10px 0;
+                background: linear-gradient(135deg, #ff1f68, #ffd700);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+            .fireworks {
+                width: min(380px, 90vw);
+                margin: 0 auto;
+                display: block;
+                border-radius: 15px;
+            }
+
+            @keyframes pop {
+                from {
+                    transform: scale(0.92);
+                    opacity: 0;
+                }
+                to {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .polaroid {
+                    display: none;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- SCATTERED POLAROIDS IN BACKGROUND -->
+        <div class="polaroid" style="--rotation: -8deg; top: 5%; left: 5%; width: 140px; height: 160px; animation-delay: 0.1s;">
+            <img src="assets/mocha2.jpg" alt="">
+        </div>
+        <div class="polaroid" style="--rotation: 12deg; top: 8%; right: 8%; width: 130px; height: 150px; animation-delay: 0.3s;">
+            <img src="assets/mocha3.jpg" alt="">
+        </div>
+        <div class="polaroid" style="--rotation: -15deg; top: 35%; left: 3%; width: 120px; height: 140px; animation-delay: 0.5s;">
+            <img src="assets/mocha4.jpg" alt="">
+        </div>
+        <div class="polaroid" style="--rotation: 18deg; top: 32%; right: 5%; width: 135px; height: 155px; animation-delay: 0.4s;">
+            <img src="assets/mocha5.jpg" alt="">
+        </div>
+        <div class="polaroid" style="--rotation: -10deg; bottom: 8%; left: 7%; width: 145px; height: 165px; animation-delay: 0.6s;">
+            <img src="assets/mocha6.jpg" alt="">
+        </div>
+        <div class="polaroid" style="--rotation: 14deg; bottom: 10%; right: 10%; width: 125px; height: 145px; animation-delay: 0.2s;">
+            <img src="assets/mocha7.jpg" alt="">
+        </div>
+        <div class="polaroid" style="--rotation: -12deg; top: 60%; left: 8%; width: 128px; height: 148px; animation-delay: 0.7s;">
+            <img src="assets/mocha8.jpg" alt="">
+        </div>
+        <div class="polaroid" style="--rotation: 16deg; top: 65%; right: 6%; width: 138px; height: 158px; animation-delay: 0.8s;">
+            <img src="assets/mocha10.jpg" alt="">
+        </div>
+        <div class="polaroid" style="--rotation: -7deg; top: 18%; left: 15%; width: 115px; height: 135px; animation-delay: 0.9s;">
+            <img src="assets/mocha11.jpg" alt="">
+        </div>
+        <div class="polaroid" style="--rotation: 20deg; top: 48%; right: 12%; width: 132px; height: 152px; animation-delay: 1s;">
+            <img src="assets/mocha12.jpg" alt="">
+        </div>
+        <div class="polaroid" style="--rotation: -18deg; bottom: 35%; left: 4%; width: 122px; height: 142px; animation-delay: 1.1s;">
+            <img src="assets/mocha13.jpg" alt="">
+        </div>
+        <div class="polaroid" style="--rotation: 9deg; top: 22%; right: 18%; width: 140px; height: 160px; animation-delay: 0.35s;">
+            <img src="assets/mocha14.jpg" alt="">
+        </div>
+
+        <canvas id="confettiCanvas"></canvas>
+
+        <main class="card">
+            <!-- MAIN POLAROID PHOTO -->
+            <div class="main-photo-container">
+                <img class="main-photo" src="assets/mocha1.png" alt="Mocha">
+            </div>
+
+            <h1>Gargi ji, will you be my valentine?</h1>
+
+            <section class="button-zone" id="zone">
+                <button id="yesBtn">Yes</button>
+                <button id="noBtn">No</button>
+            </section>
+
+            <!-- HINT (ONLY FIRST SECTION) -->
+            <div class="hint" id="hint">“No” nohoboooooooo 🌚</div>
+
+                    <!-- src="https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif" -->
+            <section class="result" id="result">
+                <h2>Yess, reallyyyyyyyyy, YAAAAAAAY! 🎉</h2>
+                <img
+                    class="fireworks"
+                    src="https://i.pinimg.com/originals/13/12/fc/1312fc095b30328c2264d1ce819a57c6.gif"
+                    alt="Fireworks"
+                />
+            </section>
+        </main>
+
+        <script>
+            const zone = document.getElementById("zone");
+            const yesBtn = document.getElementById("yesBtn");
+            const noBtn = document.getElementById("noBtn");
+            const result = document.getElementById("result");
+            const hint = document.getElementById("hint");
+
+            /* ---------- CONFETTI (FIXED FULL SCREEN) ---------- */
+            const confettiCanvas = document.getElementById("confettiCanvas");
+
+            function resizeConfettiCanvas() {
+                const dpr = Math.max(1, window.devicePixelRatio || 1);
+                confettiCanvas.width = Math.floor(window.innerWidth * dpr);
+                confettiCanvas.height = Math.floor(window.innerHeight * dpr);
+                confettiCanvas.style.width = "100vw";
+                confettiCanvas.style.height = "100vh";
+            }
+
+            resizeConfettiCanvas();
+            window.addEventListener("resize", resizeConfettiCanvas);
+            window.addEventListener("orientationchange", () =>
+                setTimeout(resizeConfettiCanvas, 150),
+            );
+
+            const confettiInstance = confetti.create(confettiCanvas, {
+                resize: false,
+                useWorker: true,
+            });
+
+            function fullScreenConfetti() {
+                const end = Date.now() + 1600;
+
+                (function frame() {
+                    confettiInstance({
+                        particleCount: 12,
+                        spread: 90,
+                        startVelocity: 45,
+                        ticks: 180,
+                        origin: { x: Math.random(), y: Math.random() * 0.3 },
+                    });
+                    if (Date.now() < end) requestAnimationFrame(frame);
+                })();
+
+                setTimeout(() => {
+                    confettiInstance({
+                        particleCount: 300,
+                        spread: 140,
+                        startVelocity: 60,
+                        ticks: 220,
+                        origin: { x: 0.5, y: 0.55 },
+                    });
+                }, 300);
+            }
+
+            /* ---------- YES BUTTON GROWS ---------- */
+            let yesScale = 1;
+            function growYes() {
+                yesScale = Math.min(2.2, yesScale + 0.1);
+                yesBtn.style.transform = `translateY(-50%) scale(${yesScale})`;
+            }
+
+            /* ---------- NO BUTTON RUNS AWAY ---------- */
+            function clamp(n, min, max) {
+                return Math.max(min, Math.min(max, n));
+            }
+
+            function moveNo(px, py) {
+                const z = zone.getBoundingClientRect();
+                const b = noBtn.getBoundingClientRect();
+
+                let dx = b.left + b.width / 2 - px;
+                let dy = b.top + b.height / 2 - py;
+                let mag = Math.hypot(dx, dy) || 1;
+                dx /= mag;
+                dy /= mag;
+
+                let newLeft = b.left - z.left + dx * 150;
+                let newTop = b.top - z.top + dy * 150;
+
+                newLeft = clamp(newLeft, 0, z.width - b.width);
+                newTop = clamp(newTop, 0, z.height - b.height);
+
+                noBtn.style.left = newLeft + "px";
+                noBtn.style.top = newTop + "px";
+                noBtn.style.transform = "none";
+
+                growYes();
+            }
+
+            zone.addEventListener("pointermove", (e) => {
+                const b = noBtn.getBoundingClientRect();
+                const d = Math.hypot(
+                    b.left + b.width / 2 - e.clientX,
+                    b.top + b.height / 2 - e.clientY,
+                );
+                if (d < 140) moveNo(e.clientX, e.clientY);
+            });
+
+            noBtn.addEventListener("click", (e) => e.preventDefault());
+
+            /* ---------- YES CLICK ---------- */
+            yesBtn.addEventListener("click", () => {
+                zone.style.display = "none";
+                hint.style.display = "none"; // HIDE THE HINT
+                result.style.display = "block";
+                resizeConfettiCanvas();
+                fullScreenConfetti();
+            });
+        </script>
+    </body>
+</html>
